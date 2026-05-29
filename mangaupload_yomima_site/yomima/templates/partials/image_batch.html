@@ -1,0 +1,32 @@
+{#
+  partials/image_batch.html
+#}
+<div id="batch-meta"
+  data-total="{{ total }}"
+  data-next-offset="{{ next_offset }}"
+  data-has-more="{{ 'true' if has_more else 'false' }}"
+  data-pending="false"
+  hidden>
+</div>
+{% for item in image_items %}
+<div class="img-block">
+  <img
+    src="{{ item.src | e }}"
+    alt="ページ {{ item.index + 1 }} / {{ item.total }}"
+    onerror="retryImg(this, 0)"
+  >
+  <button
+    class="discord-btn"
+    data-filename="{{ item.filename | e }}"
+    onclick="sendDiscord(this.dataset.filename, this.nextElementSibling)"
+  >Discord ↑ {{ item.index + 1 }}/{{ item.total }}</button>
+  <div class="discord-status"></div>
+</div>
+{% endfor %}
+{% if warnings %}
+<div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.5rem;">
+  {% for w in warnings %}
+  <div>⚠ {{ w | e }}</div>
+  {% endfor %}
+</div>
+{% endif %}
