@@ -123,8 +123,13 @@
   }
 
   (function () {
-    const sp = new URLSearchParams(location.search).get('share') || '';
+    const params = new URLSearchParams(location.search);
+    const sp  = params.get('share')    || '';
+    const wh1 = params.get('webhook1') || '';
+    const wh2 = params.get('webhook2') || '';
     document.getElementById('share-param').value = sp;
+    if (wh1) document.getElementById('wh1').value = wh1;
+    if (wh2) document.getElementById('wh2').value = wh2;
   })();
 </script>
 {% endblock %}

@@ -145,9 +145,11 @@ const mangaUrl   = document.getElementById('manga-url').value;
 let total        = null;
 let currentN     = 0;
 let sessionToken = '';
-// サーバーから渡されたスクランブル設定を使用
-const SCRAMBLED  = {{ 'true' if scrambled else 'false' }};
-let tileSize     = {{ tile_size }};
+// サーバーから渡されたスクランブル設定
+const SCRAMBLED       = {{ 'true' if scrambled else 'false' }};
+let tileSize          = {{ tile_size }};
+// Webhook送信許可フラグ（外部ZIP=true、プラットフォーム作品=settings.jsonの値）
+const WEBHOOK_ENABLED = {{ 'true' if webhook_enabled else 'false' }};
 
 const buffer  = new Map();   // index → { el, filename }
 const loading = new Set();
@@ -185,7 +187,7 @@ function onWhInput() {
   const entry = buffer.get(currentN);
   if (entry && entry.filename) {
     const sta = document.getElementById('discord-status-area');
-    if (wh1 || wh2) {
+    if (WEBHOOK_ENABLED && (wh1 || wh2)) {
       const safeFilename = entry.filename.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       sta.innerHTML =
         `<button class="btn btn-sm" style="font-size:.7rem"
@@ -319,8 +321,7 @@ function render(index) {
     view.appendChild(el);
 
     const sta = document.getElementById('discord-status-area');
-    if ((wh1El() || wh2El()) && filename) {
-      // CSS.escape はファイル名の . を \. に変換してしまうので使わない
+    if (WEBHOOK_ENABLED && (wh1El() || wh2El()) && filename) {
       const safeFilename = filename.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       sta.innerHTML =
         `<button class="btn btn-sm" style="font-size:.7rem"

@@ -220,10 +220,13 @@ async def reader(
         mg.get_filename_from_url(url)
     )
 
-    # settings.json から scrambled / tile_size / タイトル を取得する
-    scrambled  = False
-    tile_size  = 16
-    manga_title_display = manga_title  # デフォルトはファイル名
+    # settings.json から scrambled / tile_size / タイトル / webhook_enabled を取得する
+    scrambled       = False
+    tile_size       = 16
+    manga_title_display = manga_title
+    # 外部ZIP（マイリスト経由）はデフォルト許可
+    # プラットフォーム作品は settings.json の値に従う
+    webhook_enabled = True
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -233,10 +236,9 @@ async def reader(
                 catalog = resp.json()
                 for item in catalog:
                     if item.get("cbz_url") == url:
-                        scrambled = item.get("scrambled", False)
-                        tile_size = item.get("tile_size", 16)
-                        # タイトルとエピソード名が設定されていれば使う
-                        # 未設定（空文字）の場合はファイル名のまま
+                        scrambled       = item.get("scrambled", False)
+                        tile_size       = item.get("tile_size", 16)
+                        webhook_enabled = item.get("webhook_enabled", False)
                         t = item.get("title_name", "").strip()
                         e = item.get("episode_name", "").strip()
                         if t and e:
@@ -250,15 +252,16 @@ async def reader(
         pass
 
     return templates.TemplateResponse(request, "reader.html", {
-        "request":     request,
-        "manga_url":   url,
-        "manga_title": manga_title_display,
-        "share_param": share,
-        "per_page":    mg.IMAGES_PER_LOAD,
-        "webhook1":    webhook1,
-        "webhook2":    webhook2,
-        "scrambled":   scrambled,
-        "tile_size":   tile_size,
+        "request":         request,
+        "manga_url":       url,
+        "manga_title":     manga_title_display,
+        "share_param":     share,
+        "per_page":        mg.IMAGES_PER_LOAD,
+        "webhook1":        webhook1,
+        "webhook2":        webhook2,
+        "scrambled":       scrambled,
+        "tile_size":       tile_size,
+        "webhook_enabled": webhook_enabled,
     })
 
 # ---------------------------------------------------------------------------
