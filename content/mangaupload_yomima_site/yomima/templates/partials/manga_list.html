@@ -1,0 +1,48 @@
+{#
+  partials/manga_list.html
+  依存: list.html の openReader(), submitRemove(), toggleShare()
+#}
+{% if error %}
+<p class="msg-error">⚠ {{ error }}</p>
+{% endif %}
+{% if manga_list %}
+<ul class="manga-list">
+  {% for manga in manga_list %}
+  <li class="manga-item" data-url="{{ manga.url | e }}">
+    <div class="manga-info">
+      <div class="manga-title">{{ manga.title | e }}</div>
+      <div class="manga-title-sub">
+        <time datetime="{{ manga.added_time | int }}"></time>
+      </div>
+    </div>
+    <button class="btn btn-sm"
+      onclick="openReader(this.closest('.manga-item').dataset.url)">読む</button>
+    <button class="btn btn-sm btn-ghost"
+      onclick="submitRemove(this.closest('.manga-item').dataset.url)">削除</button>
+  </li>
+  {% endfor %}
+</ul>
+<div style="margin-top:1.25rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+  {% if manga_list|length < max_count %}
+    <span class="msg-info">あと {{ max_count - manga_list|length }} 件追加できます</span>
+  {% else %}
+    <span class="msg-error">リストが満杯です（{{ max_count }}件）</span>
+  {% endif %}
+  <button class="btn btn-sm" style="margin-left:auto;" onclick="toggleShare()">🔗 URL共有</button>
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="icon">📚</span>
+  マンガがまだありません。<br>上のフォームにURLを入力して追加してください。
+</div>
+{% endif %}
+<script>
+  document.querySelectorAll('.manga-title-sub time').forEach(el => {
+    const ts = parseInt(el.getAttribute('datetime'), 10);
+    if (!ts) return;
+    el.textContent = new Date(ts * 1000).toLocaleDateString('ja-JP', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  });
+</script>
