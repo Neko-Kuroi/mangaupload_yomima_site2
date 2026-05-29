@@ -170,18 +170,22 @@ async function initSession() {
 const wh1El = () => document.getElementById('wh1').value.trim();
 const wh2El = () => document.getElementById('wh2').value.trim();
 
-function toggleWh()  { document.getElementById('wh-bar').classList.toggle('open'); }
-
-function onWhInput() {
-  // ↩リンクにWebhookパラメータを含める（戻ってもWebhookが維持される）
+function updateAllBackLinks() {
   const shareParam = document.getElementById('share-param').value;
   const wh1 = wh1El(), wh2 = wh2El();
   const params = new URLSearchParams();
   if (shareParam) params.set('share', shareParam);
   if (wh1) params.set('webhook1', wh1);
   if (wh2) params.set('webhook2', wh2);
-  const qs = params.toString();
-  document.getElementById('back-link').href = '/?' + (qs || '');
+  const dest = '/?' + params.toString();
+
+  // ↩ボタン
+  const backLink = document.getElementById('back-link');
+  if (backLink) backLink.href = dest;
+
+  // ヘッダーのマイリストリンク
+  const mylistLink = document.getElementById('nav-mylist');
+  if (mylistLink) mylistLink.href = dest;
 
   // 現在表示中のページのDiscordボタンを更新
   const entry = buffer.get(currentN);
@@ -199,6 +203,8 @@ function onWhInput() {
     }
   }
 }
+
+function onWhInput() { updateAllBackLinks(); }
 
 /* ================================================================
    画像fetch → バッファに格納
@@ -554,6 +560,7 @@ async function init() {
 
 async function boot() {
   await initSession();
+  updateAllBackLinks();  // 初期化時にリンクを設定
   await init();
 }
 
