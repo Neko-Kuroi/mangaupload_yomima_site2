@@ -337,19 +337,20 @@ body.reader-page main.container {
 /* ── 画像エリア（残り全高さ） ── */
 #page-view {
   flex: 1 1 0;
-  min-height: 0;          /* ← min-height:60vh を削除 */
+  min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;   /* 上寄せ：上の余白をなくし画像を大きく */
   justify-content: center;
   background: var(--bg2);
   border-radius: var(--radius);
-  overflow: hidden;
-  padding: 0;             /* ← padding を削除 */
+  overflow-y: auto;          /* 画像が縦に長い場合はスクロール可能に */
+  overflow-x: hidden;
+  padding: 0;
 }
 #page-view img,
 #page-view canvas {
   max-width: 100%;
-  max-height: 100%;
+  /* max-height は外して縦長画像も本来サイズで表示 */
   width: auto;
   height: auto;
   display: block;
