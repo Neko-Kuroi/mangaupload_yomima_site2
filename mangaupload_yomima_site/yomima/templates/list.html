@@ -130,6 +130,15 @@
     document.getElementById('share-param').value = sp;
     if (wh1) document.getElementById('wh1').value = wh1;
     if (wh2) document.getElementById('wh2').value = wh2;
+
+    // ナビリンクにも share / webhook を引き継ぐ
+    const qs = params.toString();
+    if (qs) {
+      const mylist = document.getElementById('nav-mylist');
+      if (mylist) mylist.href = '/?' + qs;
+      const pub = document.getElementById('nav-public');
+      if (pub) pub.href = '/public?' + qs;
+    }
   })();
 </script>
 {% endblock %}
