@@ -221,12 +221,15 @@ async def reader(
     )
 
     # settings.json から scrambled / tile_size / タイトル / webhook_enabled を取得する
-    scrambled       = False
-    tile_size       = 16
+    scrambled           = False
+    tile_size           = 16
     manga_title_display = manga_title
-    # 外部ZIP（マイリスト経由）はデフォルト許可
-    # プラットフォーム作品は settings.json の値に従う
-    webhook_enabled = True
+
+    # URLがプラットフォームのCBZ形式かどうかで許可判定を分ける。
+    # 外部ZIP・マイリスト追加のURLは無条件で Discord 送信を許可する。
+    # プラットフォーム公開作品（/api/public/cbz/）のみ作者の webhook_enabled 設定に従う。
+    is_platform_url = "/api/public/cbz/" in url
+    webhook_enabled = not is_platform_url   # 外部URL → True、プラットフォーム → カタログ確認後に決定
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -236,9 +239,11 @@ async def reader(
                 catalog = resp.json()
                 for item in catalog:
                     if item.get("cbz_url") == url:
-                        scrambled       = item.get("scrambled", False)
-                        tile_size       = item.get("tile_size", 16)
-                        webhook_enabled = item.get("webhook_enabled", False)
+                        scrambled = item.get("scrambled", False)
+                        tile_size = item.get("tile_size", 16)
+                        # プラットフォーム作品のみ作者設定を反映。外部URLは上書きしない。
+                        if is_platform_url:
+                            webhook_enabled = item.get("webhook_enabled", False)
                         t = item.get("title_name", "").strip()
                         e = item.get("episode_name", "").strip()
                         if t and e:

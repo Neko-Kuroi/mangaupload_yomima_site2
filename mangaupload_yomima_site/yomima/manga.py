@@ -474,6 +474,10 @@ def send_image_to_discord(
                 '.jpeg': 'image/jpeg', '.webp': 'image/webp'}
     mime     = mime_map.get(ext, 'image/png')
 
+    # Discord に送るファイル名：元のstemの先頭5文字 + 拡張子
+    stem     = os.path.splitext(filename)[0]
+    filename = stem[:5] + ext
+
     errors: list[str] = []
     for webhook_url in webhook_urls:
         if not webhook_url:

@@ -177,7 +177,8 @@ function updateAllBackLinks() {
   if (shareParam) params.set('share', shareParam);
   if (wh1) params.set('webhook1', wh1);
   if (wh2) params.set('webhook2', wh2);
-  const dest = '/?' + params.toString();
+  const qs   = params.toString();
+  const dest = '/?' + qs;
 
   // ↩ボタン
   const backLink = document.getElementById('back-link');
@@ -187,21 +188,9 @@ function updateAllBackLinks() {
   const mylistLink = document.getElementById('nav-mylist');
   if (mylistLink) mylistLink.href = dest;
 
-  // 現在表示中のページのDiscordボタンを更新
-  const entry = buffer.get(currentN);
-  if (entry && entry.filename) {
-    const sta = document.getElementById('discord-status-area');
-    if (WEBHOOK_ENABLED && (wh1 || wh2)) {
-      const safeFilename = entry.filename.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      sta.innerHTML =
-        `<button class="btn btn-sm" style="font-size:.7rem"
-           onclick="sendDiscord('${safeFilename}')">
-           Discord ↑ ${currentN+1}/${total}
-         </button>`;
-    } else {
-      sta.innerHTML = '';
-    }
-  }
+  // ヘッダーの公開作品リンク（shareとwebhookを引き継ぎ、公開作品画面から戻れるようにする）
+  const publicLink = document.getElementById('nav-public');
+  if (publicLink) publicLink.href = '/public' + (qs ? '?' + qs : '');
 }
 
 function onWhInput() { updateAllBackLinks(); }

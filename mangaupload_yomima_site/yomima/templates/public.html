@@ -70,9 +70,19 @@
 {% endif %}
 
 <script>
+  /* ページ読み込み時にURLパラメータからshare/webhookを取得して保持 */
+  const _pubParams = new URLSearchParams(location.search);
+  const _pubShare  = _pubParams.get('share')    || '';
+  const _pubWh1    = _pubParams.get('webhook1') || '';
+  const _pubWh2    = _pubParams.get('webhook2') || '';
+
   function openInReader(cbzUrl) {
     if (!cbzUrl) return;
-    location.href = '/reader?' + new URLSearchParams({ url: cbzUrl });
+    const params = new URLSearchParams({ url: cbzUrl });
+    if (_pubShare) params.set('share',    _pubShare);
+    if (_pubWh1)   params.set('webhook1', _pubWh1);
+    if (_pubWh2)   params.set('webhook2', _pubWh2);
+    location.href = '/reader?' + params.toString();
   }
 </script>
 
