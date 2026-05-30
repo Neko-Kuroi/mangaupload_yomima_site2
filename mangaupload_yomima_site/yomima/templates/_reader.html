@@ -211,35 +211,15 @@ function retryImg(img, n) {
   }, 500 * (2 ** n));
 }
 
-/* 1枚だけ取得（後方互換用ラッパー） */
-function fetchOne(index) {
-  return fetchBatch(index, 1);
-}
-
-/* ================================================================
-   バッチフェッチ：1リクエストで count 枚まとめて取得
-   ================================================================ */
-async function fetchBatch(startIndex, count = 3) {
-  if (startIndex < 0) return;
-  if (total !== null && startIndex >= total) return;
-
-  /* バッファ・ロード済みを除いた実際に取得が必要なインデックスを算出 */
-  const needed = [];
-  for (let i = startIndex; i < startIndex + count; i++) {
-    if (i < 0) continue;
-    if (total !== null && i >= total) break;
-    if (!buffer.has(i) && !loading.has(i)) needed.push(i);
-  }
-  if (needed.length === 0) return;
-
-  /* needed の先頭から連続する範囲を1リクエストで取得 */
-  const first  = needed[0];
-  const limit  = needed.length;
-  needed.forEach(i => loading.add(i));
+async function fetchOne(index) {
+  if (index < 0) return;
+  if (total !== null && index >= total) return;
+  if (buffer.has(index) || loading.has(index)) return;
+  loading.add(index);
 
   try {
     const qs  = new URLSearchParams({
-      url: mangaUrl, offset: first, limit,
+      url: mangaUrl, offset: index, limit: 1,
       webhook1: wh1El(), webhook2: wh2El(),
       session_token: sessionToken,
     });
@@ -254,65 +234,60 @@ async function fetchBatch(startIndex, count = 3) {
 
     total = parseInt(meta.dataset.total, 10);
 
-    const blocks = doc.querySelectorAll('.img-block');
+    const block = doc.querySelector('.img-block');
+    if (!block) return;                           // ページなし（正常終了）
 
-    /* 各ブロックを並列でロード・復号してバッファに積む */
-    await Promise.all(Array.from(blocks).map(async (block, i) => {
-      const index   = first + i;
-      if (buffer.has(index)) return;   // 並列リクエストで先着済みの場合はスキップ
+    const imgEl    = block.querySelector('img');
+    const discBtn  = block.querySelector('.discord-btn');
+    /* ← filename は discord-btn の data-filename から確実に取得 */
+    const filename = discBtn ? discBtn.dataset.filename : '';
 
-      const imgEl   = block.querySelector('img');
-      if (!imgEl) return;
-      const discBtn = block.querySelector('.discord-btn');
-      const filename = discBtn ? discBtn.dataset.filename : '';
+    /* ブラウザに画像をロードさせる（body に隠して追加） */
+    imgEl.style.display = 'none';
+    imgEl.onerror = () => retryImg(imgEl, 0);
+    document.body.appendChild(imgEl);
 
-      /* ブラウザに画像をロードさせる（body に隠して追加） */
-      imgEl.style.display = 'none';
-      imgEl.onerror = () => retryImg(imgEl, 0);
-      document.body.appendChild(imgEl);
+    await new Promise(resolve => {
+      if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
+      imgEl.onload  = resolve;
+      imgEl.onerror = resolve;
+    });
 
-      await new Promise(resolve => {
-        if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
-        imgEl.onload  = resolve;
-        imgEl.onerror = resolve;
-      });
-
-      /* スクランブル判定 → Canvas に復号 or そのまま */
-      let el;
-      if (SCRAMBLED && filename && isScrambled(filename)) {
-        try   { el = decode(imgEl, filename, tileSize); }
-        catch(e) {
-          console.warn("復号失敗:", e);
-          el = imgEl;
-        }
-        if (imgEl.parentNode) imgEl.parentNode.removeChild(imgEl);
-      } else {
+    /* スクランブル判定 → Canvas に復号 or そのまま
+       SCRAMBLED フラグ（サーバーから取得）が true かつ
+       ファイル名がスクランブル命名規則の場合のみ復号する */
+    let el;
+    if (SCRAMBLED && filename && isScrambled(filename)) {
+      try   { el = decode(imgEl, filename, tileSize); }
+      catch(e) {
+        console.warn("復号失敗:", e);
         el = imgEl;
       }
+      if (imgEl.parentNode) imgEl.parentNode.removeChild(imgEl);
+    } else {
+      el = imgEl;
+    }
 
-      buffer.set(index, { el, filename });
-      if (index === currentN) render(index);
-    }));
+    buffer.set(index, { el, filename });
+    if (index === currentN) render(index);
 
   } catch(e) {
-    console.error('fetchBatch', first, e);
-    needed.forEach(index => {
-      if (buffer.has(index)) return;
-      const d = Object.assign(document.createElement('div'), {
-        textContent: '🔴 読み込み失敗',
-      });
-      d.style.cssText = 'color:var(--text-dim);font-size:.8rem;text-align:center';
-      buffer.set(index, { el: d, filename: '' });
-      if (index === currentN) render(index);
+    console.error('fetchOne', index, e);
+    const d = Object.assign(document.createElement('div'), {
+      textContent: '🔴 読み込み失敗',
     });
+    d.style.cssText = 'color:var(--text-dim);font-size:.8rem;text-align:center';
+    buffer.set(index, { el: d, filename: '' });
+    if (index === currentN) render(index);
   } finally {
-    needed.forEach(i => loading.delete(i));
+    loading.delete(index);
   }
 }
 
-/* prefetch：現在地から3枚を1リクエストでまとめて取得 */
 function prefetch(n) {
-  fetchBatch(n, 3);
+  fetchOne(n);
+  fetchOne(n + 1);
+  fetchOne(n + 2);
 }
 
 /* ================================================================
@@ -573,9 +548,8 @@ async function init() {
   document.getElementById('page-counter').textContent = '— / —';
   document.getElementById('btn-prev').disabled = true;
   document.getElementById('btn-next').disabled = true;
-  // 0番を待ちつつ、1・2番はバッチで並列取得
-  await fetchBatch(0, 1);          // 0番をまず表示
-  fetchBatch(1, 2);                // 1・2番を1リクエストで並列取得
+  await fetchOne(0);
+  fetchOne(1).then(() => fetchOne(2));
 }
 
 async function boot() {
