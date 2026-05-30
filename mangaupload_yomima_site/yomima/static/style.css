@@ -350,7 +350,7 @@ body.reader-page main.container {
 #page-view img,
 #page-view canvas {
   max-width: 100%;
-  /* max-height は外して縦長画像も本来サイズで表示 */
+  max-height: 100%;
   width: auto;
   height: auto;
   display: block;
