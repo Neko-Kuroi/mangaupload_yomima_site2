@@ -339,18 +339,17 @@ body.reader-page main.container {
   flex: 1 1 0;
   min-height: 0;
   display: flex;
-  align-items: flex-start;   /* 上寄せ：上の余白をなくし画像を大きく */
+  align-items: flex-start;   /* 上寄せ */
   justify-content: center;
   background: var(--bg2);
   border-radius: var(--radius);
-  overflow-y: auto;          /* 画像が縦に長い場合はスクロール可能に */
-  overflow-x: hidden;
+  overflow: hidden;
   padding: 0;
 }
 #page-view img,
 #page-view canvas {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 100vh;         /* viewportの高さを上限に（flex-startでも確実に効く） */
   width: auto;
   height: auto;
   display: block;
