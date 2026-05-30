@@ -76,6 +76,16 @@
   const _pubWh1    = _pubParams.get('webhook1') || '';
   const _pubWh2    = _pubParams.get('webhook2') || '';
 
+  /* ヘッダーのナビリンクにshare/webhookを引き継ぐ */
+  (function () {
+    const qs = _pubParams.toString();
+    if (!qs) return;
+    const mylist = document.getElementById('nav-mylist');
+    if (mylist) mylist.href = '/?' + qs;
+    const pub = document.getElementById('nav-public');
+    if (pub) pub.href = '/public?' + qs;
+  })();
+
   function openInReader(cbzUrl) {
     if (!cbzUrl) return;
     const params = new URLSearchParams({ url: cbzUrl });
