@@ -170,6 +170,11 @@ async function initSession() {
 const wh1El = () => document.getElementById('wh1').value.trim();
 const wh2El = () => document.getElementById('wh2').value.trim();
 
+function toggleWh() {
+  document.getElementById('wh-bar').classList.toggle('open');
+  document.body.classList.toggle('wh-active');
+}
+
 function updateAllBackLinks() {
   const shareParam = document.getElementById('share-param').value;
   const wh1 = wh1El(), wh2 = wh2El();
