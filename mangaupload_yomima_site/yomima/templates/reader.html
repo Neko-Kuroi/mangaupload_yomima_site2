@@ -345,6 +345,9 @@ function render(index) {
     view.innerHTML = '';
     view.appendChild(el);
 
+    // 画像表示中はsite-headerを非表示
+    document.querySelector('.site-header').style.display = 'none';
+
     const sta = document.getElementById('discord-status-area');
     if (WEBHOOK_ENABLED && (wh1El() || wh2El()) && filename) {
       const safeFilename = filename.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -570,6 +573,8 @@ async function init() {
   buffer.clear();
   loading.clear();
   total = null;
+  // ローディング中はsite-headerを再表示
+  document.querySelector('.site-header').style.display = '';
   document.getElementById('page-counter').textContent = '— / —';
   document.getElementById('btn-prev').disabled = true;
   document.getElementById('btn-next').disabled = true;
