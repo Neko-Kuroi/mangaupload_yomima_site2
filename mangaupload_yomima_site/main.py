@@ -250,6 +250,30 @@ def generate_thumbnail(img_path: Path, thumb_dir: Path, index: int) -> Path:
 # ---------------------------------------------------------------------------
 upload_progress: dict[str, dict] = {}
 
+# ---------------------------------------------------------------------------
+# ビューカウント用IPクールダウン（メモリ内）
+# key: "{user_id}:{title_id}:{episode_id}:{ip}" → 最終カウント時刻
+# ---------------------------------------------------------------------------
+_view_cooldown: dict[str, float] = {}
+VIEW_COOLDOWN_SECONDS = 3600  # 同一IPは1時間に1カウント
+
+def increment_view_count(settings_path: Path, client_ip: str) -> None:
+    """settings.jsonのview_countを1増やす（IPクールダウン付き）"""
+    cooldown_key = f"{settings_path}:{client_ip}"
+    now = time.time()
+    last = _view_cooldown.get(cooldown_key, 0)
+    if now - last < VIEW_COOLDOWN_SECONDS:
+        return  # クールダウン中はカウントしない
+    try:
+        with open(settings_path, "r") as f:
+            meta = json.load(f)
+        meta["view_count"] = meta.get("view_count", 0) + 1
+        with open(settings_path, "w") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+        _view_cooldown[cooldown_key] = now
+    except Exception as e:
+        logger.warning(f"view_count更新失敗: {e}")
+
 def update_progress(job_id: str, phase: str, current: int, total: int, **kwargs):
     upload_progress[job_id] = {
         "phase":   phase,
@@ -692,6 +716,10 @@ async def serve_public_cbz(
     cbz_path = FINAL_ZIP_DIR / f"user_{user_id}" / f"title_{title_id}" / f"episode_{episode_id}.cbz"
     if not cbz_path.exists():
         raise HTTPException(status_code=404, detail="CBZファイルが見つかりません")
+
+    # ビューカウント（IPクールダウン付き、バックグラウンドで処理）
+    client_ip = get_client_ip(request)
+    increment_view_count(settings_path, client_ip)
 
     return FileResponse(
         path=str(cbz_path),
@@ -1242,6 +1270,7 @@ async function loadMyWorks() {
                 <span class="badge ${w.access_level==='public'?'badge-free':'badge-premium'}">${w.access_level==='public'?'無料':'PREMIUM'}</span>
                 ${w.scrambled ? ' &nbsp;<span style="font-size:.72rem;color:#7c3aed">🔒 スクランブル済</span>' : ''}
                 ${!w.has_cbz  ? ' &nbsp;<span style="color:#ef4444;font-size:.75rem">⚠ CBZ未生成</span>' : ''}
+                ${isPublished ? ` &nbsp;<span style="font-size:.78rem;color:#64748b">👁 ${(w.view_count||0).toLocaleString()} views</span>` : ''}
               </div>
               ${w.caption ? `<div class="work-card-caption">${esc(w.caption)}</div>` : ''}
               ${w.note    ? `<div class="work-card-note">📝 ${esc(w.note)}</div>` : ''}
