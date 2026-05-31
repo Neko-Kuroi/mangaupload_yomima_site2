@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # ディレクトリ準備
 # ---------------------------------------------------------------------------
-STATIC_DIR    = Path("/content/mangaupload_yomima_site/static")
+STATIC_DIR    = Path("/content/mangaupload_yomima_site2/mangaupload_yomima_site/static")
 TMP_DIR       = Path("./storage/tmp")
 FINAL_ZIP_DIR = Path("./storage/zips")
 for d in [STATIC_DIR, TMP_DIR, FINAL_ZIP_DIR]:
